@@ -680,9 +680,11 @@ out:
 static int ufs_qcom_crypto_req_setup(struct ufs_hba *hba,
 	struct ufshcd_lrb *lrbp, u8 *cc_index, bool *enable, u64 *dun)
 {
+	int ret;
+
+#ifdef CONFIG_CRYPTO_DEV_QCOM_ICE
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
 	struct request *req;
-	int ret;
 
 	if (lrbp->cmd && lrbp->cmd->request)
 		req = lrbp->cmd->request;
@@ -694,6 +696,9 @@ static int ufs_qcom_crypto_req_setup(struct ufs_hba *hba,
 		*dun = req->bio->bi_iter.bi_sector;
 
 	ret = ufs_qcom_ice_req_setup(host, lrbp->cmd, cc_index, enable);
+#else
+	ret = 0;
+#endif
 	if (ret)
 		dev_err(hba->dev, "%s: ufs_qcom_ice_req_setup failed (%d)\n",
 			__func__, ret);

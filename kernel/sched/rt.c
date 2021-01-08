@@ -1705,6 +1705,9 @@ static void sched_rt_update_capacity_req(struct rq *rq, bool tick)
 {
 	u64 total, used, age_stamp, avg;
 	s64 delta;
+	unsigned long cpu_utilization;
+	unsigned long capacity_curr;
+	int req;
 	int cpu = cpu_of(rq);
 
 	if (!sched_freq())
@@ -1712,9 +1715,9 @@ static void sched_rt_update_capacity_req(struct rq *rq, bool tick)
 
 #ifdef CONFIG_SCHED_WALT
 	if (!walt_disabled && sysctl_sched_use_walt_cpu_util) {
-		unsigned long cpu_utilization = boosted_cpu_util(cpu);
-		unsigned long capacity_curr = capacity_curr_of(cpu);
-		int req = 1;
+		cpu_utilization = boosted_cpu_util(cpu);
+		capacity_curr = capacity_curr_of(cpu);
+		req = 1;
 
 		/*
 		 * During a tick, we don't throttle frequency down, just update

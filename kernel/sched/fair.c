@@ -4919,7 +4919,9 @@ static inline bool cpu_in_sg(struct sched_group *sg, int cpu)
 	return cpu != -1 && cpumask_test_cpu(cpu, sched_group_cpus(sg));
 }
 
+#ifdef CONFIG_SCHED_TUNE
 static inline int normalize_energy(int energy_diff);
+#endif
 
 #define eenv_before(__X) eenv->before.__X
 #define eenv_after(__X)  eenv->after.__X
@@ -4963,8 +4965,11 @@ __update_perf_energy_deltas(struct energy_env *eenv)
 	eenv->prf_delta = eenv_delta(speedup_idx) - eenv_delta(delay_idx);
 
 	/* Energy Variation */
+#ifdef CONFIG_SCHED_TUNE
 	eenv->nrg_delta = normalize_energy(eenv_delta(energy));
-
+#else
+	eenv->nrg_delta = 0;
+#endif
 }
 
 /*
@@ -5362,6 +5367,8 @@ static int select_idle_sibling(struct task_struct *p, int target)
 	int best_idle = -1;
 	int best_idle_cstate = -1;
 	int best_idle_capacity = INT_MAX;
+	unsigned long new_usage;
+	unsigned long capacity_orig;
 
 	if (!sysctl_sched_cstate_aware) {
 		if (idle_cpu(target))
@@ -5389,8 +5396,8 @@ static int select_idle_sibling(struct task_struct *p, int target)
 				for_each_cpu_and(i, tsk_cpus_allowed(p), sched_group_cpus(sg)) {
 					struct rq *rq = cpu_rq(i);
 					int idle_idx = idle_get_state_idx(rq);
-					unsigned long new_usage = boosted_task_util(p);
-					unsigned long capacity_orig = capacity_orig_of(i);
+					new_usage = boosted_task_util(p);
+					capacity_orig = capacity_orig_of(i);
 					if (new_usage > capacity_orig || !idle_cpu(i))
 						goto next;
 
